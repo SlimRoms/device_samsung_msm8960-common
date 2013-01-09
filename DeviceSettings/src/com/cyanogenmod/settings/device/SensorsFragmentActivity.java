@@ -34,10 +34,10 @@ public class SensorsFragmentActivity extends PreferenceFragment {
     private static final String TAG = "GalaxyS3Parts_General";
 
     private static final String FILE_USE_GYRO_CALIB = "/sys/class/sec/gsensorcal/calibration";
-    private static final String FILE_TOUCHKEY_TOGGLE = "/sys/class/leds/button-backlight/max_brightness";
+    /*private static final String FILE_TOUCHKEY_TOGGLE = "/sys/class/leds/button-backlight/max_brightness";*/
     private static final String FILE_BLN_TOGGLE = "/sys/class/misc/backlightnotification/enabled";
 
-    private static final boolean sHasTouchkeyToggle = Utils.fileExists(FILE_TOUCHKEY_TOGGLE);
+    /*private static final boolean sHasTouchkeyToggle = Utils.fileExists(FILE_TOUCHKEY_TOGGLE);*/
     private static final boolean sHasTouchkeyBLN = Utils.fileExists(FILE_BLN_TOGGLE);
 
     @Override
@@ -47,9 +47,9 @@ public class SensorsFragmentActivity extends PreferenceFragment {
         addPreferencesFromResource(R.xml.sensors_preferences);
 
         PreferenceCategory prefs = (PreferenceCategory) findPreference(DeviceSettings.CATEGORY_TOUCHKEY);
-        if (!sHasTouchkeyToggle) {
+        /*if (!sHasTouchkeyToggle) {
             prefs.removePreference(findPreference(DeviceSettings.KEY_TOUCHKEY_LIGHT));
-        }
+        }*/
         if (!sHasTouchkeyBLN) {
             prefs.removePreference(findPreference(DeviceSettings.KEY_TOUCHKEY_BLN));
         }
@@ -75,8 +75,8 @@ public class SensorsFragmentActivity extends PreferenceFragment {
             Utils.writeValue(FILE_USE_GYRO_CALIB, "0");
             Utils.writeValue(FILE_USE_GYRO_CALIB, "1");
             Utils.showDialog((Context)getActivity(), "Calibration done", "The gyroscope has been successfully calibrated!");
-        } else if (key.compareTo(DeviceSettings.KEY_TOUCHKEY_LIGHT) == 0) {
-            Utils.writeValue(FILE_TOUCHKEY_TOGGLE, ((CheckBoxPreference)preference).isChecked() ? "255" : "0");
+        /*} else if (key.compareTo(DeviceSettings.KEY_TOUCHKEY_LIGHT) == 0) {
+            Utils.writeValue(FILE_TOUCHKEY_TOGGLE, ((CheckBoxPreference)preference).isChecked() ? "255" : "0");*/
         } else if (key.compareTo(DeviceSettings.KEY_TOUCHKEY_BLN) == 0) {
             Utils.writeValue(FILE_BLN_TOGGLE, ((CheckBoxPreference)preference).isChecked() ? "1" : "0");
         }
@@ -93,9 +93,9 @@ public class SensorsFragmentActivity extends PreferenceFragment {
         if (!sharedPrefs.getBoolean(DeviceSettings.KEY_USE_GYRO_CALIBRATION, true))
             Utils.writeValue(FILE_USE_GYRO_CALIB, "0");
 
-        if (sHasTouchkeyToggle) {
+        /*if (sHasTouchkeyToggle) {
             Utils.writeValue(FILE_TOUCHKEY_TOGGLE, sharedPrefs.getBoolean(DeviceSettings.KEY_TOUCHKEY_LIGHT, true) ? "255" : "0");
-        }
+        }*/
 
         if (sHasTouchkeyBLN) {
             Utils.writeValue(FILE_BLN_TOGGLE, sharedPrefs.getBoolean(DeviceSettings.KEY_TOUCHKEY_BLN, true) ? "1" : "0");
