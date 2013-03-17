@@ -78,6 +78,7 @@
 
 #define VDEC_EXTRADATA_EXT_DATA          0x0800
 #define VDEC_EXTRADATA_USER_DATA         0x1000
+#define VDEC_EXTRADATA_EXT_BUFFER        0x2000
 
 #define VDEC_CMDBASE	0x800
 #define VDEC_CMD_SET_INTF_VERSION	(VDEC_CMDBASE)
@@ -245,6 +246,7 @@ struct vdec_allocatorproperty {
 	size_t buffer_size;
 	uint32_t alignment;
 	uint32_t buf_poolid;
+	size_t meta_buffer_size;
 };
 
 struct vdec_bufferpayload {
@@ -535,6 +537,11 @@ struct vdec_aspectratioinfo {
 	uint32_t par_height;
 };
 
+struct vdec_sep_metadatainfo {
+	void __user *metabufaddr;
+	uint32_t size;
+};
+
 struct vdec_output_frameinfo {
 	void __user *bufferaddr;
 	size_t offset;
@@ -547,6 +554,7 @@ struct vdec_output_frameinfo {
 	struct vdec_framesize framesize;
 	enum vdec_interlaced_format interlaced_format;
 	struct vdec_aspectratioinfo aspect_ratio_info;
+	struct vdec_sep_metadatainfo metadata_info;
 };
 
 union vdec_msgdata {
@@ -580,4 +588,13 @@ struct vdec_mv_buff_size{
 	int alignment;
 };
 
+struct vdec_meta_buffers {
+	size_t size;
+	int count;
+	int pmem_fd;
+	int pmem_fd_iommu;
+	int offset;
+};
+
 #endif /* end of macro _VDECDECODER_H_ */
+
