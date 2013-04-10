@@ -9,4 +9,4 @@
 # 4: download_end
 
 sleep 3
-echo 3 > /dev/block/mmcblk0p10
+echo 3 > /dev/block/platform/msm_sdcc.1/by-name/param
