@@ -96,7 +96,15 @@ static int check_vendor_module()
     return rv;
 }
 
-const static char * iso_values[] = {"auto,ISO100,ISO200,ISO400,ISO800","auto"};
+const static char * iso_values[] = {"auto,"
+#ifdef ISO_MODE_HJR
+"ISO_HJR,"
+#endif
+"ISO100,ISO200,ISO400,ISO800"
+#ifdef ISO_MODE_1600
+",ISO1600"
+#endif
+,"auto"};
 
 static char * camera_fixup_getparams(int id, const char * settings)
 {
@@ -106,12 +114,32 @@ static char * camera_fixup_getparams(int id, const char * settings)
     // fix params here
     params.set(android::CameraParameters::KEY_SUPPORTED_ISO_MODES, iso_values[id]);
 
+#ifdef PREVIEW_SIZE_FIXUP
+    params.remove(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES);
+    params.remove(android::CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO);
+    if(id == 0) {
+        params.set(android::CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "1280x720,800x480,720x480,640x480,320x240,176x144");
+        params.set(android::CameraParameters::KEY_SUPPORTED_FOCUS_MODES, "auto,infinity,macro,fixed");
+        params.set(android::CameraParameters::KEY_SUPPORTED_SELECTABLE_ZONE_AF, "auto,spot-metering,center-weighted,frame-average");
+        params.set(android::CameraParameters::KEY_SUPPORTED_TOUCH_AF_AEC, "touch-off,touch-on");
+    } else {
+        params.set(android::CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "640x480,320x240,176x144");
+        params.set(android::CameraParameters::KEY_SUPPORTED_FOCUS_MODES, "infinity");
+        params.set(android::CameraParameters::KEY_SUPPORTED_SELECTABLE_ZONE_AF, "");
+        params.set(android::CameraParameters::KEY_SUPPORTED_TOUCH_AF_AEC, "");
+        }
+#endif
+
 #ifdef DISABLE_FACE_DETECTION
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
     /* Disable face detection for front facing camera */
     if(id == 1) {
+#endif
         params.set(android::CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, "0");
         params.set(android::CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, "0");
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
     }
+#endif
 #endif
 
     android::String8 strParams = params.flatten();
@@ -132,6 +160,8 @@ char * camera_fixup_setparams(struct camera_device * device, const char * settin
     bool isVideo = !strcmp(params.get(android::CameraParameters::KEY_RECORDING_HINT), "true");
 
     // fix params here
+    // No need to fix-up ISO_HJR, it is the same for userspace and the camera lib
+#ifdef QCOM_HARDWARE
     if(params.get("iso")) {
         const char* isoMode = params.get(android::CameraParameters::KEY_ISO_MODE);
         if(strcmp(isoMode, "ISO100") == 0)
@@ -142,14 +172,37 @@ char * camera_fixup_setparams(struct camera_device * device, const char * settin
             params.set(android::CameraParameters::KEY_ISO_MODE, "400");
         else if(strcmp(isoMode, "ISO800") == 0)
             params.set(android::CameraParameters::KEY_ISO_MODE, "800");
+        else if(strcmp(isoMode, "ISO1600") == 0)
+            params.set(android::CameraParameters::KEY_ISO_MODE, "1600");
     }
+#endif
+
+#ifdef PREVIEW_SIZE_FIXUP
+    params.remove(android::CameraParameters::KEY_SUPPORTED_VIDEO_SIZES);
+    params.remove(android::CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO);
+    if(id == 0) {
+        params.set(android::CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "1280x720,800x480,720x480,640x480,320x240,176x144");
+        params.set(android::CameraParameters::KEY_SUPPORTED_FOCUS_MODES, "auto,infinity,macro,fixed");
+        params.set(android::CameraParameters::KEY_SUPPORTED_SELECTABLE_ZONE_AF, "auto,spot-metering,center-weighted,frame-average");
+        params.set(android::CameraParameters::KEY_SUPPORTED_TOUCH_AF_AEC, "touch-off,touch-on");
+    } else {
+        params.set(android::CameraParameters::KEY_SUPPORTED_PREVIEW_SIZES, "640x480,320x240,176x144");
+        params.set(android::CameraParameters::KEY_SUPPORTED_FOCUS_MODES, "infinity");
+        params.set(android::CameraParameters::KEY_SUPPORTED_SELECTABLE_ZONE_AF, "");
+        params.set(android::CameraParameters::KEY_SUPPORTED_TOUCH_AF_AEC, "");
+        }
+#endif
 
 #ifdef DISABLE_FACE_DETECTION
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
     /* Disable face detection for front facing camera */
     if(id == 1) {
+#endif
         params.set(android::CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, "0");
         params.set(android::CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, "0");
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
     }
+#endif
 #endif
 
     /* Samsung camcorder mode */
@@ -162,8 +215,6 @@ char * camera_fixup_setparams(struct camera_device * device, const char * settin
         camera_send_command(device, 1508, 0, 0);
     }
 #endif
-
-
 #endif
     android::String8 strParams = params.flatten();
 
