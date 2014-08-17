@@ -125,11 +125,6 @@ PRODUCT_PACKAGES += \
     libgenlock \
     memtrack.msm8960
 
-# GalaxyS3Settings
-PRODUCT_PACKAGES += \
-    GalaxyS3Settings \
-    SamsungServiceMode
-
 # GPS
 PRODUCT_PACKAGES += \
     gps.msm8960
