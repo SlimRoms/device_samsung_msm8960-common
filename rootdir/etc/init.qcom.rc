@@ -202,16 +202,16 @@ on boot
 
 ################################################################
 #Additional On Boot Writes to Dalvik library to Tweak for tighter Garbage collection and Swap usage.
-    write /proc/sys/vm/dirty_background_ratio 60	# the num of pages when the kernel flusher threads will start writing.
-    write /proc/sys/vm/dirty_expire_centisecs 3000	# Duration before the dirty pages become due.
-#    write /proc/sys/vm/dirty_ratio 70			# Not needed since there's no Swap. But just in case we turn swap back on.
-    write /proc/sys/vm/dirty_writeback_centisecs 20000	# Delay before dirty pages are written to the Disk.
+    write /proc/sys/vm/dirty_background_ratio 70	# the num of pages when the kernel flusher threads will start writing.
+#    write /proc/sys/vm/dirty_expire_centisecs 3000	# Duration before the dirty pages become due.
+    write /proc/sys/vm/dirty_ratio 90			# Not needed since there's no Swap. But just in case we turn swap back on.
+#    write /proc/sys/vm/dirty_writeback_centisecs 20000	# Delay before dirty pages are written to the Disk.
     write /proc/sys/vm/oom_kill_allocating_task 1	# Turn this on. It avoids a full task list scan for the OOM Killer.
-    write /proc/sys/vm/overcommit_memory 0		# Kernel will NOT pretend that there's enough memory as Swap is turned off.
-    write /proc/sys/vm/overcommit_ratio 0		# The total ram can't exceed swap size + this percent * RAM. Doesn't affect unless overcommit_memory=2
-    write /proc/sys/vm/panic_on_oom 0			# Don't want kernel to panick and cause freeze and reboot.
+#    write /proc/sys/vm/overcommit_memory 0		# Kernel will NOT pretend that there's enough memory as Swap is turned off.
+#    write /proc/sys/vm/overcommit_ratio 0		# The total ram can't exceed swap size + this percent * RAM. Doesn't affect unless overcommit_memory=2
+#    write /proc/sys/vm/panic_on_oom 0			# Don't want kernel to panick and cause freeze and reboot.
     write /proc/sys/vm/swappiness 0			# Don't need Swap. Otherwise set to 10 in case of issues.
-    write /proc/sys/vm/vfs_cache_pressure 50		# This percent controls kernel reclaim of memory used to cache dir and inode objects.
+    write /proc/sys/vm/vfs_cache_pressure 5		# This percent controls kernel reclaim of memory used to cache dir and inode objects.
 ################################################################
 #Further Mods to TCP stack
 
