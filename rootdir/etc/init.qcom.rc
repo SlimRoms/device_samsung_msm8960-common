@@ -569,13 +569,20 @@ service irsc_util /system/bin/logwrapper /system/bin/irsc_util "/etc/sec_config"
     user root
     oneshot
 
+# Leaving this for now, feel free to remove once you've moved to rmt_storage2
 service rmt_storage /system/bin/rmt_storage
+    class core
+    user root
+    disabled
+
+service rmt_storage2 /system/bin/rmt_storage2
     class core
     user root
     disabled
 
 on property:ro.boot.emmc=true
     start rmt_storage
+    start rmt_storage2
 
 service bridgemgrd /system/bin/bridgemgrd
     class late_start
@@ -940,26 +947,11 @@ service kickstart /system/bin/qcks -i /firmware-mdm/image/
     oneshot
     disabled
 
-service qrngd /system/bin/qrngd -f
-    class main
-    user root
-    group root
-
-service efsrestorecon /system/bin/restorecon -R /efs
-    class late_start
-    user root
-    group root
-    disabled
-    oneshot
-
 # Start kickstart if mdm is detected
 on property:ro.baseband=mdm
     mkdir /data/qcks 0770 system system
     start kickstart
     start qmuxd
-
-on property:init.svc.bootanim=stopped
-    start efsrestorecon
 
 # boot completed
 on property:dev.bootcomplete=1
