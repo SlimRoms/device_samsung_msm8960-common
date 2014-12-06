@@ -58,7 +58,6 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
     persist.sys.usb.config=mtp
 
 PRODUCT_PROPERTY_OVERRIDES += \
-    af.resampler.quality=255 \
     ro.config.vc_call_vol_steps=7
 
 PRODUCT_PROPERTY_OVERRIDES += \
