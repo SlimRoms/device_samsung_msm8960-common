@@ -59,8 +59,6 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += \
 
 PRODUCT_PROPERTY_OVERRIDES += \
     af.resampler.quality=255 \
-    lpa.decode=true \
-    qcom.hw.aac.encoder=true \
     ro.config.vc_call_vol_steps=7
 
 PRODUCT_PROPERTY_OVERRIDES += \
