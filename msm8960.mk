@@ -68,6 +68,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=131072
 
 PRODUCT_PROPERTY_OVERRIDES += \
+    persist.sys.media.use-awesome=true
+
+PRODUCT_PROPERTY_OVERRIDES += \
     persist.data_netmgrd_nint=16 \
     persist.radio.add_power_save=1 \
     persist.radio.apm_sim_not_pwdn=1 \
