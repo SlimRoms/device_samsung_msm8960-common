@@ -465,8 +465,16 @@ char* camera_get_parameters(struct camera_device * device)
     if(!device)
         return NULL;
 
-    char* params = VENDOR_CALL(device, get_parameters);
+    int id = CAMERA_ID(device);
 
+    char *parameters = VENDOR_CALL(device, get_parameters);
+    wrapper_camera_device_t *wrapper = (wrapper_camera_device_t *)device;
+
+    CameraParameters params;
+    params.unflatten(String8(parameters));
+
+    // fix params here
+    params.set(CameraParameters::KEY_SUPPORTED_ISO_MODES, iso_values[CAMERA_ID(device)]);
 #ifdef LOG_PARAMETERS
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
