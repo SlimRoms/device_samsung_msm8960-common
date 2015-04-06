@@ -449,12 +449,75 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     char *tmp = NULL;
     tmp = camera_fixup_setparams(device, params);
 
-#ifdef LOG_PARAMETERS
-    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, tmp);
+    // jactive device camera don't seem to have recording hint param, so read it safely
+    const char* recordingHint = params.get(CameraParameters::KEY_RECORDING_HINT);
+    bool isVideo = false;
+    if (recordingHint)
+        isVideo = !strcmp(recordingHint, "true");
+
+    // fix params here
+    // No need to fix-up ISO_HJR, it is the same for userspace and the camera lib
+    if(params.get("iso")) {
+        const char* isoMode = params.get(CameraParameters::KEY_ISO_MODE);
+        if(strcmp(isoMode, "ISO100") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "100");
+        else if(strcmp(isoMode, "ISO200") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "200");
+        else if(strcmp(isoMode, "ISO400") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "400");
+        else if(strcmp(isoMode, "ISO800") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "800");
+        else if(strcmp(isoMode, "ISO1600") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "1600");
+    }
+
+#ifdef SAMSUNG_CAMERA_MODE
+    /* Samsung camcorder mode */
+    if (id == FRONT_CAMERA_ID) {
+    /* Enable for front camera only */
+        if (!(!strcmp(camMode, "1") && !isVideo) || wasVideo) {
+        /* Enable only if not already set (Snapchat) but do enable if the setting is left
+        over while switching from stills to video */
+            if ((!strcmp(params.get(CameraParameters::KEY_PREVIEW_FRAME_RATE), "15") ||
+               (!strcmp(params.get(CameraParameters::KEY_PREVIEW_SIZE), "320x240") &&
+               !strcmp(params.get(CameraParameters::KEY_JPEG_QUALITY), "96"))) && !isVideo) {
+                /* Do not set for video chat in Hangouts (Frame rate 15) or Skype (Preview size 320x240
+                and jpeg quality 96 */
+            } else {
+            /* "Normal case". Required to prevent distorted video and reboots while taking snaps */
+            params.set(CameraParameters::KEY_SAMSUNG_CAMERA_MODE, isVideo ? "1" : "0");
+            }
+            wasVideo = (isVideo || wasVideo);
+        }
+    } else {
+    wasVideo = false;
+    }
+#endif
+#ifdef ENABLE_ZSL
+    params.set(CameraParameters::KEY_ZSL, isVideo ? "off" : "on");
+    params.set(CameraParameters::KEY_CAMERA_MODE, isVideo ? "0" : "1");
+
+    /* Remove video-size, d2 doesn't support separate video stream */
+    params.remove(CameraParameters::KEY_VIDEO_SIZE);
 #endif
 
-    int ret = VENDOR_CALL(device, set_parameters, tmp);
-    return ret;
+    // Don't send mangled ISO modes pref back to the camera firmware
+    params.remove(CameraParameters::KEY_SUPPORTED_ISO_MODES);
+
+#ifndef DISABLE_AUTOFOCUS
+    /* Are we in continuous focus mode? */
+    if (strcmp(params.get(CameraParameters::KEY_FOCUS_MODE), "infinity") &&
+       strcmp(params.get(CameraParameters::KEY_FOCUS_MODE), "fixed") && (id == BACK_CAMERA_ID)) {
+        CAF = true;
+    } else {
+        /* Front camera or manually set infinity mode on rear cam */
+        CAF = false;
+    }
+#endif
+
+    String8 strParams = params.flatten();
+
+    return VENDOR_CALL(device, set_parameters, strParams);
 }
 
 char* camera_get_parameters(struct camera_device * device)
@@ -487,7 +550,19 @@ char* camera_get_parameters(struct camera_device * device)
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
 
+<<<<<<< HEAD
     return params;
+=======
+#ifdef ENABLE_ZSL
+    /* Remove video-size, d2 doesn't support separate video stream */
+    params.remove(CameraParameters::KEY_VIDEO_SIZE);
+#endif
+
+    /* Sure, it's supported, but not here */
+    params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "false");
+
+    return strdup(params.flatten().string());
+>>>>>>> eb3b565... Camera: only remove video-size for D2
 }
 
 static void camera_put_parameters(struct camera_device *device, char *params)
