@@ -446,14 +446,26 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     if(!device)
         return -EINVAL;
 
+<<<<<<< HEAD
     char *tmp = NULL;
     tmp = camera_fixup_setparams(device, params);
+=======
+    int id = CAMERA_ID(device);
 
-    // jactive device camera don't seem to have recording hint param, so read it safely
-    const char* recordingHint = params.get(CameraParameters::KEY_RECORDING_HINT);
+#ifdef LOG_PARAMETERS
+    ALOGV("Raw set_parameters");
+    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, settings);
+#endif
+
+    CameraParameters params;
+    params.unflatten(String8(settings));
+
+    const char* camMode = params.get(CameraParameters::KEY_SAMSUNG_CAMERA_MODE);
+>>>>>>> 337973d... msm8960-common: camera changes
+
     bool isVideo = false;
-    if (recordingHint)
-        isVideo = !strcmp(recordingHint, "true");
+    if (params.get(CameraParameters::KEY_RECORDING_HINT))
+        isVideo = !strcmp(params.get(CameraParameters::KEY_RECORDING_HINT), "true");
 
     // fix params here
     // No need to fix-up ISO_HJR, it is the same for userspace and the camera lib
@@ -517,6 +529,11 @@ int camera_set_parameters(struct camera_device * device, const char *params)
 
     String8 strParams = params.flatten();
 
+#ifdef LOG_PARAMETERS
+    ALOGV("Fixed set_parameters");
+    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, strParams);
+#endif
+
     return VENDOR_CALL(device, set_parameters, strParams);
 }
 
@@ -531,21 +548,31 @@ char* camera_get_parameters(struct camera_device * device)
     int id = CAMERA_ID(device);
 
     char *parameters = VENDOR_CALL(device, get_parameters);
+
+#ifdef LOG_PARAMETERS
+    ALOGV("Raw get_parameters");
+    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, parameters);
+#endif
+
     wrapper_camera_device_t *wrapper = (wrapper_camera_device_t *)device;
 
     CameraParameters params;
     params.unflatten(String8(parameters));
 
     // fix params here
-    params.set(CameraParameters::KEY_SUPPORTED_ISO_MODES, iso_values[CAMERA_ID(device)]);
-#ifdef LOG_PARAMETERS
-    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
+    params.set(CameraParameters::KEY_SUPPORTED_ISO_MODES, iso_values[id]);
+
+#ifdef EXPOSURE_HACK
+    params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "0.5");
+    params.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, "-4");
+    params.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, "4");
 #endif
 
     char * tmp = camera_fixup_getparams(CAMERA_ID(device), params);
     VENDOR_CALL(device, put_parameters, params);
     params = tmp;
 
+<<<<<<< HEAD
 #ifdef LOG_PARAMETERS
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
@@ -563,6 +590,24 @@ char* camera_get_parameters(struct camera_device * device)
 
     return strdup(params.flatten().string());
 >>>>>>> eb3b565... Camera: only remove video-size for D2
+=======
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
+    /* Disable face detection for front facing camera */
+    if(id == FRONT_CAMERA_ID) {
+#endif
+        params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, "0");
+        params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, "0");
+        params.set(CameraParameters::KEY_FACE_DETECTION, "off");
+        params.set(CameraParameters::KEY_SUPPORTED_FACE_DETECTION, "off");
+#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
+    }
+#endif
+
+    char *ret = strdup(params.flatten().string());
+    VENDOR_CALL(device, put_parameters, parameters);
+
+    return ret;
+>>>>>>> 337973d... msm8960-common: camera changes
 }
 
 static void camera_put_parameters(struct camera_device *device, char *params)
