@@ -33,6 +33,8 @@
 #include <hardware/camera.h>
 #include <camera/Camera.h>
 #include <camera/CameraParameters.h>
+#include <camera/CameraParameters2.h>
+#include <dlfcn.h>
 
 static android::Mutex gCameraWrapperLock;
 static camera_module_t *gVendorModule = 0;
@@ -446,10 +448,6 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     if(!device)
         return -EINVAL;
 
-<<<<<<< HEAD
-    char *tmp = NULL;
-    tmp = camera_fixup_setparams(device, params);
-=======
     int id = CAMERA_ID(device);
 
 #ifdef LOG_PARAMETERS
@@ -457,11 +455,10 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, settings);
 #endif
 
-    CameraParameters params;
+    CameraParameters2 params;
     params.unflatten(String8(settings));
 
     const char* camMode = params.get(CameraParameters::KEY_SAMSUNG_CAMERA_MODE);
->>>>>>> 337973d... msm8960-common: camera changes
 
     bool isVideo = false;
     if (params.get(CameraParameters::KEY_RECORDING_HINT))
@@ -556,7 +553,7 @@ char* camera_get_parameters(struct camera_device * device)
 
     wrapper_camera_device_t *wrapper = (wrapper_camera_device_t *)device;
 
-    CameraParameters params;
+    CameraParameters2 params;
     params.unflatten(String8(parameters));
 
     // fix params here
@@ -572,14 +569,10 @@ char* camera_get_parameters(struct camera_device * device)
     VENDOR_CALL(device, put_parameters, params);
     params = tmp;
 
-<<<<<<< HEAD
 #ifdef LOG_PARAMETERS
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
 
-<<<<<<< HEAD
-    return params;
-=======
 #ifdef ENABLE_ZSL
     /* Remove video-size, d2 doesn't support separate video stream */
     params.remove(CameraParameters::KEY_VIDEO_SIZE);
@@ -589,8 +582,6 @@ char* camera_get_parameters(struct camera_device * device)
     params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "false");
 
     return strdup(params.flatten().string());
->>>>>>> eb3b565... Camera: only remove video-size for D2
-=======
 #ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
     /* Disable face detection for front facing camera */
     if(id == FRONT_CAMERA_ID) {
@@ -607,7 +598,6 @@ char* camera_get_parameters(struct camera_device * device)
     VENDOR_CALL(device, put_parameters, parameters);
 
     return ret;
->>>>>>> 337973d... msm8960-common: camera changes
 }
 
 static void camera_put_parameters(struct camera_device *device, char *params)
