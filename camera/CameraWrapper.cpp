@@ -573,26 +573,10 @@ char* camera_get_parameters(struct camera_device * device)
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
 
-#ifdef ENABLE_ZSL
-    /* Remove video-size, d2 doesn't support separate video stream */
-    params.remove(CameraParameters::KEY_VIDEO_SIZE);
-#endif
-
-    /* Sure, it's supported, but not here */
-    params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "false");
-
-    return strdup(params.flatten().string());
-#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
-    /* Disable face detection for front facing camera */
-    if(id == FRONT_CAMERA_ID) {
-#endif
-        params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, "0");
-        params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, "0");
-        params.set(CameraParameters::KEY_FACE_DETECTION, "off");
-        params.set(CameraParameters::KEY_SUPPORTED_FACE_DETECTION, "off");
-#ifndef DISABLE_FACE_DETECTION_BOTH_CAMERAS
-    }
-#endif
+    params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_HW, "0");
+    params.set(CameraParameters::KEY_MAX_NUM_DETECTED_FACES_SW, "0");
+    params.set(CameraParameters::KEY_FACE_DETECTION, "off");
+    params.set(CameraParameters::KEY_SUPPORTED_FACE_DETECTION, "off");
 
     char *ret = strdup(params.flatten().string());
     VENDOR_CALL(device, put_parameters, parameters);
