@@ -37,7 +37,9 @@
 static android::Mutex gCameraWrapperLock;
 static camera_module_t *gVendorModule = 0;
 
-static char **fixed_set_params = NULL;
+#ifndef DISABLE_AUTOFOCUS
+static bool CAF = false;
+#endif
 
 static int camera_device_open(const hw_module_t* module, const char* name,
                 hw_device_t** device);
@@ -390,7 +392,10 @@ int camera_auto_focus(struct camera_device * device)
 
     if(!device)
         return -EINVAL;
-
+#ifdef DERP2
+     if (CAF)
+         camera_send_command(device, 1552, 0, 0);
+#endif
 
     return VENDOR_CALL(device, auto_focus);
 }
@@ -408,9 +413,14 @@ int camera_cancel_auto_focus(struct camera_device * device)
     /* APEXQ/EXPRESS: Calling cancel_auto_focus causes the camera to crash for unknown reasons.
      * Disabling it has no adverse effect. For others, only call cancel_auto_focus when the
      * preview is enabled. This is needed so some 3rd party camera apps don't lock up. */
-#ifndef DISABLE_AUTOFOCUS
-    if (camera_preview_enabled(device))
-        ret = VENDOR_CALL(device, cancel_auto_focus);
+#ifdef DERP2
+    if (camera_preview_enabled(device)) {
+        if (!CAF) {
+        //ret = VENDOR_CALL(device, cancel_auto_focus);
+        } else {
+        camera_send_command(device, 1551, 0, 0);
+        }
+    }
 #endif
 
     return ret;
@@ -446,8 +456,72 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     if(!device)
         return -EINVAL;
 
-    char *tmp = NULL;
-    tmp = camera_fixup_setparams(device, params);
+    int id = CAMERA_ID(device);
+
+#ifdef LOG_PARAMETERS
+    ALOGV("Raw set_parameters");
+    __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, settings);
+#endif
+
+    CameraParameters2 params;
+    params.unflatten(String8(settings));
+
+    bool isVideo = false;
+    if (params.get(CameraParameters::KEY_RECORDING_HINT))
+        isVideo = !strcmp(params.get(CameraParameters::KEY_RECORDING_HINT), "true");
+
+    // fix params here
+    // No need to fix-up ISO_HJR, it is the same for userspace and the camera lib
+    if(params.get("iso")) {
+        const char* isoMode = params.get(CameraParameters::KEY_ISO_MODE);
+        if(strcmp(isoMode, "ISO100") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "100");
+        else if(strcmp(isoMode, "ISO200") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "200");
+        else if(strcmp(isoMode, "ISO400") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "400");
+        else if(strcmp(isoMode, "ISO800") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "800");
+        else if(strcmp(isoMode, "ISO1600") == 0)
+            params.set(CameraParameters::KEY_ISO_MODE, "1600");
+    }
+
+#ifdef DERP2
+    if (id == FRONT_CAMERA_ID) {
+        int camMode;
+        if (params.get(CameraParameters::KEY_SAMSUNG_CAMERA_MODE)) {
+            camMode = params.getInt(CameraParameters::KEY_SAMSUNG_CAMERA_MODE);
+        } else {
+            camMode = -1;
+        }
+
+        if (camMode == -1) {
+            params.set(CameraParameters::KEY_SAMSUNG_CAMERA_MODE, "1");
+        } else {
+            params.set(CameraParameters::KEY_SAMSUNG_CAMERA_MODE, isVideo ? "1" : "0");
+        }
+    }
+
+    params.set(CameraParameters::KEY_ZSL, isVideo ? "off" : "on");
+    params.set(CameraParameters::KEY_CAMERA_MODE, isVideo ? "0" : "1");
+
+    /* Remove video-size, d2 doesn't support separate video stream */
+    params.remove(CameraParameters::KEY_VIDEO_SIZE);
+
+    /* Are we in continuous focus mode? */
+    if (strcmp(params.get(CameraParameters::KEY_FOCUS_MODE), "infinity") &&
+       strcmp(params.get(CameraParameters::KEY_FOCUS_MODE), "fixed") && (id == BACK_CAMERA_ID)) {
+        CAF = true;
+    } else {
+        /* Front camera or manually set infinity mode on rear cam */
+        CAF = false;
+    }
+#endif
+
+    // Don't send mangled ISO modes pref back to the camera firmware
+    params.remove(CameraParameters::KEY_SUPPORTED_ISO_MODES);
+
+    String8 strParams = params.flatten();
 
 #ifdef LOG_PARAMETERS
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, tmp);
@@ -457,7 +531,14 @@ int camera_set_parameters(struct camera_device * device, const char *params)
     return ret;
 }
 
-char* camera_get_parameters(struct camera_device * device)
+const static char * iso_values[] = {"auto,"
+"ISO100,ISO200,ISO400,ISO800"
+#ifdef DERP2
+",ISO1600"
+#endif
+,"auto"};
+
+static char *camera_get_parameters(struct camera_device *device)
 {
     ALOGV("%s", __FUNCTION__);
     ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device, (uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
@@ -471,9 +552,22 @@ char* camera_get_parameters(struct camera_device * device)
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
 #endif
 
-    char * tmp = camera_fixup_getparams(CAMERA_ID(device), params);
-    VENDOR_CALL(device, put_parameters, params);
-    params = tmp;
+    wrapper_camera_device_t *wrapper = (wrapper_camera_device_t *)device;
+
+    CameraParameters2 params;
+    params.unflatten(String8(parameters));
+
+    // fix params here
+    params.set(CameraParameters::KEY_SUPPORTED_ISO_MODES, iso_values[id]);
+
+#ifdef DERP2
+    params.set(CameraParameters::KEY_EXPOSURE_COMPENSATION_STEP, "0.5");
+    params.set(CameraParameters::KEY_MIN_EXPOSURE_COMPENSATION, "-4");
+    params.set(CameraParameters::KEY_MAX_EXPOSURE_COMPENSATION, "4");
+
+    /* Sure, it's supported, but not here */
+    params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "false");
+#endif
 
 #ifdef LOG_PARAMETERS
     __android_log_write(ANDROID_LOG_VERBOSE, LOG_TAG, params);
@@ -572,11 +666,10 @@ int camera_device_open(const hw_module_t* module, const char* name,
     int rv = 0;
     int num_cameras = 0;
     int cameraid;
-    wrapper_camera_device_t* camera_device = NULL;
-    camera_device_ops_t* camera_ops = NULL;
-    wasVideo = false;
+    wrapper_camera_device_t *camera_device = NULL;
+    camera_device_ops_t *camera_ops = NULL;
 
-    android::Mutex::Autolock lock(gCameraWrapperLock);
+    Mutex::Autolock lock(gCameraWrapperLock);
 
     ALOGV("camera_device open");
 
