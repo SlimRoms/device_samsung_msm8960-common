@@ -40,7 +40,6 @@ QCOM_FLUENCE_ENABLED := false
 BOARD_HAVE_BLUETOOTH := true
 
 # Camera
-COMMON_GLOBAL_CFLAGS += -DQCOM_BSP_CAMERA_ABI_HACK
 COMMON_GLOBAL_CFLAGS += -DSAMSUNG_CAMERA_HARDWARE
 TARGET_PROVIDES_CAMERA_HAL := true
 USE_DEVICE_SPECIFIC_CAMERA := true
@@ -56,12 +55,14 @@ BOARD_HARDWARE_CLASS += device/samsung/msm8960-common/cmhw
 # Display
 BOARD_EGL_CFG := device/samsung/msm8960-common/configs/egl.cfg
 BOARD_USES_LEGACY_MMAP := true
-COMMON_GLOBAL_CFLAGS += -DNEW_ION_API
 NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
 TARGET_DISPLAY_INSECURE_MM_HEAP := true
 TARGET_DISPLAY_USE_RETIRE_FENCE := true
 TARGET_NO_ADAPTIVE_PLAYBACK := true
 TARGET_NO_INITLOGO := true
+
+# Use dlmalloc instead of jemalloc for mallocs
+MALLOC_IMPL := dlmalloc
 
 # Fonts
 EXTENDED_FONT_FOOTPRINT := true
@@ -75,19 +76,12 @@ TARGET_PROVIDES_LIBLIGHT := true
 # Logging
 TARGET_USES_LOGD := false
 
-# Media
-TARGET_ENABLE_QC_AV_ENHANCEMENTS := true
-
 # Power
 TARGET_POWERHAL_VARIANT := qcom
 
 # Partitions
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_FLASH_BLOCK_SIZE := 131072
-
-# Qualcomm support
-COMMON_GLOBAL_CFLAGS += -DQCOM_BSP
-TARGET_USES_QCOM_BSP := true
 
 # Recovery
 BOARD_USE_CUSTOM_RECOVERY_FONT := \"roboto_15x24.h\"
@@ -109,6 +103,7 @@ BOARD_SEPOLICY_UNION += \
     file_contexts \
     gamma_dev.te \
     genfs_contexts \
+    hostapd.te \
     init_shell.te \
     kernel.te \
     keypad_dev.te \
@@ -116,12 +111,14 @@ BOARD_SEPOLICY_UNION += \
     mediaserver.te \
     mm-qcamerad.te \
     mpdecision.te \
+    netd.te \
     netmgrd.te \
     orientationd.te \
     panel_dev.te \
     platform_app.te \
     power_dev.te \
     qmuxd.te \
+    radio.te \
     rild.te \
     rmt_storage.te \
     surfaceflinger.te \
@@ -129,7 +126,6 @@ BOARD_SEPOLICY_UNION += \
     system_app.te \
     system_server.te \
     thermal-engine.te \
-    thermald.te \
     ueventd.te \
     vold.te \
     wpa.te

@@ -29,6 +29,7 @@ import init.qcom.usb.rc
 
 on early-init
     write /sys/block/mmcblk0/queue/scheduler noop
+    setprop sys.perf.profile 2
 
     mkdir /firmware-mdm 0771 system system
     symlink /data/tombstones /tombstones
@@ -205,6 +206,9 @@ on boot
 
 on fs
     mount_all fstab.qcom
+
+    # Enable zRAM
+    swapon_all /fstab.qcom
 
     chown system radio /efs
     chmod 0771 /efs
@@ -751,7 +755,6 @@ on property:sys.boot_completed=1
     chmod 664 /sys/module/msm_dcvs/cores/cpu0/slack_time_min_us
     chmod 664 /sys/module/msm_mpdecision/slack_time_max_us
     chmod 664 /sys/module/msm_mpdecision/slack_time_min_us
-    write /sys/module/cpu_boost/parameters/boost_ms 10
     write /sys/module/cpu_boost/parameters/input_boost_ms 10
     write /sys/module/cpu_boost/parameters/sync_threshold 1242000
     write /sys/module/cpu_boost/parameters/input_boost_freq 1134000
@@ -759,6 +762,12 @@ on property:sys.boot_completed=1
     # Set performance profile
     setprop sys.perf.profile 1
     start thermald
+
+    # Set up KSM
+    write /sys/kernel/mm/ksm/deferred_timer 1
+    write /sys/kernel/mm/ksm/pages_to_scan 100
+    write /sys/kernel/mm/ksm/sleep_millisecs 500
+    write /sys/kernel/mm/ksm/run 1
 
 service hdmid /system/bin/hdmid
     class late_start
@@ -789,15 +798,11 @@ on property:bluetooth.hciattach=false
 service sdcard /system/bin/sdcard -u 1023 -g 1023 -l /data/media /mnt/shell/emulated
     class late_start
 
-service fuse_sdcard0 /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/sdcard0 /storage/sdcard0
+service fuse_sdcard1 /system/bin/sdcard -u 1023 -g 1023 -w 1023 /mnt/media_rw/sdcard1 /storage/sdcard1
     class late_start
     disabled
 
-service fuse_sdcard1 /system/bin/sdcard -u 1023 -g 1023 -d /mnt/media_rw/sdcard1 /storage/sdcard1
-    class late_start
-    disabled
-
-service fuse_usbdisk /system/bin/sdcard -u 1023 -g 1023 /mnt/media_rw/usbdisk /storage/usbdisk
+service fuse_usbdisk /system/bin/sdcard -u 1023 -g 1023 -w 1023 /mnt/media_rw/usbdisk /storage/usbdisk
     class late_start
     disabled
 
@@ -826,17 +831,23 @@ on property:service.bootanim.exit=1
 
 # Powersave
 on property:sys.perf.profile=0
-    start mpdecision
+    stop mpdecision
+    write /sys/devices/system/cpu/cpu0/online 1
+    write /sys/devices/system/cpu/cpu1/online 1
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor conservative
     write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor conservative
     write /sys/class/kgsl/kgsl-3d0/pwrscale/trustzone/governor ondemand
+    start mpdecision
 
 # Balanced
 on property:sys.perf.profile=1
-    start mpdecision
+    stop mpdecision
+    write /sys/devices/system/cpu/cpu0/online 1
+    write /sys/devices/system/cpu/cpu1/online 1
     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
     write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor interactive
     write /sys/class/kgsl/kgsl-3d0/pwrscale/trustzone/governor ondemand
+    start mpdecision
 
 # High performance
 on property:sys.perf.profile=2
