@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+ifeq ($(TARGET_POWERHAL_VARIANT),d2)
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -23,3 +24,4 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := power.msm8960
 include $(BUILD_SHARED_LIBRARY)
+endif

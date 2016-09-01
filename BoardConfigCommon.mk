@@ -76,7 +76,7 @@ TARGET_SPECIFIC_HEADER_PATH += device/samsung/msm8960-common/include
 TARGET_PROVIDES_LIBLIGHT := true
 
 # Build our own PowerHAL
-TARGET_POWERHAL_VARIANT :=
+TARGET_POWERHAL_VARIANT := d2
 
 # Partitions
 TARGET_USERIMAGES_USE_EXT4 := true
