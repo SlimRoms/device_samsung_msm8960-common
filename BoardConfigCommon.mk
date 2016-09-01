@@ -53,7 +53,7 @@ BOARD_CHARGER_ENABLE_SUSPEND := true
 BOARD_CHARGER_SHOW_PERCENTAGE := true
 
 # CMHW
-BOARD_HARDWARE_CLASS += device/samsung/msm8960-common/cmhw
+#BOARD_HARDWARE_CLASS += device/samsung/msm8960-common/cmhw
 
 # Display
 BOARD_USES_LEGACY_MMAP := true

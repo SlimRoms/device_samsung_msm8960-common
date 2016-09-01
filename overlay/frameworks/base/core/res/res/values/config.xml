@@ -46,8 +46,8 @@
 
     <!-- Control whether a car dock event should override the default bluetooth
          audio routing, FORCE_BT_CAR_DOCK, with an analog dock, FORCE_ANALOG_DOCK. -->
-    <bool name="config_forceAnalogCarDock">true</bool>
-    <bool name="config_forceAnalogDeskDock">true</bool>
+    <!--bool name="config_forceAnalogCarDock">true</bool>
+    <bool name="config_forceAnalogDeskDock">true</bool-->
 
     <!-- Ultrasound support for Mic/speaker path -->
     <!-- Whether the default microphone audio source supports near-ultrasound frequencies
@@ -62,6 +62,6 @@
 
     <!-- Support in Surfaceflinger for blur layers.
          NOTE: This requires additional hardware-specific code. -->
-    <bool name="config_ui_blur_enabled">true</bool>
+    <!--bool name="config_ui_blur_enabled">true</bool-->
 
 </resources>
