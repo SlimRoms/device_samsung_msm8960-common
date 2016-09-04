@@ -25,6 +25,7 @@ LOCAL_PATH := $(call my-dir)
 ifeq ($(BOARD_VENDOR),samsung)
 ifeq ($(TARGET_BOARD_PLATFORM),msm8960)
 ifneq ($(filter apexqtmo comanche d2att d2bst d2cri d2csp d2mtr d2refreshspr d2spr d2tmo d2usc d2vzw espressovzw expressatt,$(TARGET_DEVICE)),)
+$(error This tree is deprecated, everything has been moved to d2-common. Stop syncing it.)
 include $(call all-subdir-makefiles,$(LOCAL_PATH))
 endif
 endif
